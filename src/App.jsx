@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import Search from './components/Search'
 import Spinner from './components/Spinner'
+import MovieCard from './components/MovieCard';
 
 const API_URL = 'https://api.themoviedb.org/3/';
 
@@ -25,7 +26,7 @@ const App = () => {
     setErrorMessage('');
 
     try {
-      const endpoint = `${API_URL}/discover/movie?include_adult=true&include_video=true&language=en-US&page=1&sort_by=popularity.desc`;
+      const endpoint = `${API_URL}/discover/movie?include_adult=false&include_video=true&language=en-US&page=1&sort_by=popularity.desc`;
       const response = await fetch(endpoint, API_OPTIONS);
 
       if(!response.ok) {
@@ -74,11 +75,7 @@ const App = () => {
           {loading ? <Spinner /> : errorMessage ? <p className='text-red-500'>{errorMessage}</p> : (
             <ul>
               {movieList.map((movie) => (
-                <li key={movie.id}>
-                  <img src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`} alt={movie.title} />
-                  <h3>{movie.title}</h3>
-                  <p>{movie.overview}</p>
-                </li>
+                <MovieCard key={movie.id} movie={movie} />
               ))}
             </ul>
           )}
