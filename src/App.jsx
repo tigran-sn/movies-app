@@ -20,13 +20,14 @@ const App = () => {
   const [errorMessage, setErrorMessage] = useState('');
   const [movieList, setMovieList] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [adult, setAdult] = useState(false);
 
-  const fetchMovies = async () => {
+  const fetchMovies = async (query = '') => {
     setLoading(true);
     setErrorMessage('');
 
     try {
-      const endpoint = `${API_URL}/discover/movie?include_adult=false&include_video=true&language=en-US&page=1&sort_by=popularity.desc`;
+      const endpoint = query ? `${API_URL}/search/movie?query=${encodeURIComponent(query)}&include_adult=${adult}` : `${API_URL}/discover/movie?include_adult=${adult}&include_video=true&language=en-US&page=1&sort_by=popularity.desc`;
       const response = await fetch(endpoint, API_OPTIONS);
 
       if(!response.ok) {
@@ -52,8 +53,8 @@ const App = () => {
   }
 
   useEffect(() => {
-    fetchMovies();
-  }, []);
+    fetchMovies(searchTerm);
+  }, [searchTerm, adult]);
 
   return (
     <main>
@@ -72,6 +73,12 @@ const App = () => {
 
         <section className='all-movies'>
           <h2 className='mt-[40px]'>All Movies</h2>
+          <div className="search-results">
+            <div className="flex items-center ps-4 border border-gray-200 rounded-sm dark:border-gray-700">
+              <input type="checkbox" id="adult" checked={adult} onChange={() => setAdult(!adult)} className='w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600' />
+              <label className='w-full py-4 ms-2 text-sm font-medium text-gray-900 dark:text-gray-300' htmlFor="adult">Include Adult Movies</label>
+            </div>
+          </div>
           {loading ? <Spinner /> : errorMessage ? <p className='text-red-500'>{errorMessage}</p> : (
             <ul>
               {movieList.map((movie) => (
