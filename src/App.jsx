@@ -24,17 +24,21 @@ const App = () => {
   const [adult, setAdult] = useState(false);
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [trendingMovies, setTrendingMovies] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
   useDebounce(() => {
     setDebouncedSearchTerm(searchTerm);
   }, 500, [searchTerm]);
 
-  const fetchMovies = async (query = '') => {
+  const fetchMovies = async (query = '', page = 1) => {
     setLoading(true);
     setErrorMessage('');
 
     try {
-      const endpoint = query ? `${API_URL}/search/movie?query=${encodeURIComponent(query)}&include_adult=${adult}` : `${API_URL}/discover/movie?include_adult=${adult}&include_video=true&language=en-US&page=1&sort_by=popularity.desc`;
+      const endpoint = query
+        ? `${API_URL}search/movie?query=${encodeURIComponent(query)}&include_adult=${adult}&page=${page}`
+        : `${API_URL}discover/movie?include_adult=${adult}&include_video=true&language=en-US&sort_by=popularity.desc&page=${page}`;
       const response = await fetch(endpoint, API_OPTIONS);
 
       if(!response.ok) {
@@ -50,10 +54,11 @@ const App = () => {
       }
 
       setMovieList(movies.results || []);
+      setTotalPages(movies.total_pages || 1);
       setLoading(false);
 
       // If the search term is not empty and the movie list is not empty, update the search count in the database
-      if (query && movies.results.length > 0) {
+      if (query && page === 1 && movies.results.length > 0) {
         await updateSearchCount(query, movies.results[0]);
       }
     } catch (error) {
@@ -73,9 +78,15 @@ const App = () => {
     }
   }
 
+  // Reset to first page when search term or adult filter changes
   useEffect(() => {
-    fetchMovies(debouncedSearchTerm);
+    setCurrentPage(1);
   }, [debouncedSearchTerm, adult]);
+
+  // Fetch movies whenever filters or page change
+  useEffect(() => {
+    fetchMovies(debouncedSearchTerm, currentPage);
+  }, [debouncedSearchTerm, adult, currentPage]);
 
   useEffect(() => {
     loadTrendingMovies();
@@ -118,11 +129,32 @@ const App = () => {
             </div>
           </div>
           {loading ? <Spinner /> : errorMessage ? <p className='text-red-500'>{errorMessage}</p> : (
-            <ul>
-              {movieList.map((movie) => (
-                <MovieCard key={movie.id} movie={movie} />
-              ))}
-            </ul>
+            <>
+              <ul>
+                {movieList.map((movie) => (
+                  <MovieCard key={movie.id} movie={movie} />
+                ))}
+              </ul>
+              {movieList.length > 0 && totalPages > 1 && (
+                <div className="flex items-center justify-center gap-4 mt-6">
+                  <button
+                    className="px-3 py-2 rounded border border-gray-600 text-white disabled:opacity-50"
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    Previous
+                  </button>
+                  <span className="text-gray-300">Page {currentPage} of {totalPages}</span>
+                  <button
+                    className="px-3 py-2 rounded border border-gray-600 text-white disabled:opacity-50"
+                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                  >
+                    Next
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </section>
       </div>
