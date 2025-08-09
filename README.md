@@ -126,5 +126,3 @@ public/              # Static assets (icons, images)
 - Data provided by TMDB. This product uses the TMDB API but is not endorsed or certified by TMDB.
 
 ---
-
-Happy hacking!
